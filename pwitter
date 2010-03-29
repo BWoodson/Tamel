@@ -1,0 +1,320 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use Pwitter;
+use Curses::UI;
+
+my $version = "1.0";
+
+my $pwitter = Pwitter->new();
+
+# create curses interface
+my $cui = Curses::UI->new( -color_support => 1);
+
+# create file menu
+my @menu = (
+	{ -label => 'File',
+		-submenu => [
+			{ -label => 'Login		^L',
+			  -value => \&login_window },
+			{ -label => 'Update Status	^U',
+			  -value => \&update },
+			{ -label => 'Exit		^Q',
+			  -value => \&exit_dialog },
+		]
+	},
+	{ -label => 'View',
+		-submenu => [
+			{ -label => 'Welcome',
+			  -value => \&welcome,
+			},
+			{ -label => 'Timeline',
+			  -value => \&timeline,
+			},
+		]
+	},
+	{ -label => 'Help',
+		-submenu => [
+			{ -label => 'About Pwitter',
+			  -value => \&about_dialog },
+		]
+	},
+);
+
+# add menu to interface
+my $menu = $cui->add(
+	'menu', 'Menubar',
+	-menu => \@menu,
+	-fg => 'white',
+	-bg => 'blue',
+);
+
+# add a window
+my $win1 = $cui->add(
+	'win1', 'Window',
+	-y => 1,
+);
+
+# add textviewer
+my $welcome_view = $win1->add(
+	'welcome_view', 'TextViewer',
+	-text => "",
+	-title => "Welcome",
+	-pad => 1,
+	-ipad => 1,
+	-border => 1,
+	-bfg => 'green',
+	-tfg => 'green',
+	-tbg => 'black',
+	-wrapping => 1,
+	-vscrollbar =>1,
+);
+
+my $timeline_view = $win1->add(
+	'timeline_view', 'TextViewer',
+	-text => "",
+	-title => "Timeline",
+	-pad => 1,
+	-ipad => 1,
+	-border => 1,
+	-bfg => 'blue',
+	-tfg => 'blue',
+	-tbg => 'white',
+	-wrapping => 1,
+	-vscrollbar =>1,
+	-onFocus => \&timeline
+);
+
+## create some keybindings ##
+$cui->set_binding( sub{$menu->focus()}, "\cF");
+$cui->set_binding( \&exit_dialog, "\cQ");
+$cui->set_binding( \&welcome, "\cW");
+$cui->set_binding( \&timeline, "\cT");
+$cui->set_binding( \&update, "\cU");
+$cui->set_binding( \&login_window, "\cL");
+
+## run our app ##
+login();
+$welcome_view->focus();
+$cui->mainloop;
+
+## subroutines ##
+sub login {
+	my $self = shift;
+	my $r = $pwitter->login();
+
+	if(!$r) {
+		$welcome_view->text("It looks like you are missing some login info.\n\nYou're going to need to enter login information from the File menu first before we can get you tweeting!");
+	} else {
+		first_welcome();
+	}
+}
+
+sub login_window {
+	my $self = shift;	
+
+	my @u_p = $pwitter->get_u_p();
+	#shift(@u_p);
+
+	my $u = $u_p[0]?$u_p[0]:'';
+	my $p = $u_p[1]?$u_p[1]:'';
+	chomp($u);
+	chomp($p);
+
+	my $login_window = $win1->add(
+			'loginwindow', 'Window',
+			-title => 'Twitter Login',
+			-height => 14, -width => 40,
+			-border => 1, -centered => 1,
+			-bfg => 'blue',	-tfg => 'blue',
+			-tbg => 'white',
+	);
+
+	my $username_label = $login_window->add(
+			'username_label', 'Label',
+			-text => 'Username',
+			-x => 2, -y => 2,
+	);
+
+	my $username_entry = $login_window->add(
+			'username_entry', 'TextEntry',
+			-text => $u, -width => 24,
+			-x => 12, -y => 1,
+			-border => 1,
+	);
+
+	my $password_label = $login_window->add(
+			'password_label', 'Label',
+			-text => 'Password',
+			-x => 2, -y => 5,
+	);
+
+	my $password_entry = $login_window->add(
+			'password_entry', 'TextEntry',
+			-text => $p, -width => 24,
+			-x => 12, -y => 4,
+			-border => 1, -singleline => 1,
+	);
+
+	my $save_checkbox = $login_window->add(
+			'save_checkbox', 'Checkbox',
+			-label => 'Save login info?',
+			-checked => 0,
+			-x => 8, -y =>8
+	);
+
+	my $login_buttons = $login_window->add(
+			'login_buttons', 'Buttonbox',
+			-x => 10, -y => 10,
+			-buttons => [
+				{
+					-label => '< Use >',
+					-onpress => sub {
+						my $self = shift;
+
+						# save preferences
+						my $u = $username_entry->get();
+						my $p = $password_entry->get();
+						chomp($u);
+						chomp($p);
+						$pwitter->set_u_p($u, $p);
+
+						my $check = $save_checkbox->get();
+						if($check){
+							$pwitter->save_prefs();
+						}
+						login();
+						$self->parent->loose_focus;
+					},
+				},
+				{
+					-label => '< Cancel >',
+					-onpress => sub {
+						my $self = shift;
+						$self->parent->loose_focus;
+					},
+				}
+
+			]
+	);
+
+	$login_window->modalfocus();
+
+	$win1->delete('loginwindow');
+
+	login();
+}
+
+sub update {
+	my $self = shift;
+
+	my $tweet_window = $win1->add(
+			'tweetwindow', 'Window',
+			-title => 'Update Status',
+			-height => 10, -width => 40,
+			-border => 1, -centered => 1,
+			-bfg => 'blue',	-tfg => 'blue',
+			-tbg => 'white',
+	);
+
+	my $tweet_entry = $tweet_window->add(
+			'tweet_entry', 'TextEntry',
+			-height => 2, -width => 34,
+			-x => 2, -y => 1,
+			-border =>1, -wrapping => 1,
+			-maxlength => 140
+	);
+
+	my $ok_button = $tweet_window->add(
+			'ok_button', 'Buttonbox',
+			-x => 8, -y => 5,
+			-buttons => [
+				{
+					-label => '< Update >',
+					-onpress => sub {
+						my $self = shift;
+						
+						my $t = $tweet_entry->get();
+						#my $r = $pwitter->update($t);
+						
+						$self->parent->loose_focus;
+					},
+				},
+				{
+					-label => '< Cancel >',
+					-onpress => sub {
+						my $self = shift;
+						$self->parent->loose_focus;
+					},
+				}
+			]
+	);
+
+	$tweet_window->modalfocus();
+
+	$win1->delete('tweetwindow');
+}
+
+sub first_welcome {
+	# print startup message
+	my $temp = "Welcome to Pwitter!\n\n"
+		. "-= Shortcuts =-\n"
+		. "<Ctrl-W> Welcome View\n"
+		. "<Ctrl-T> Timeline View\n"
+		. "<Ctrl-U> Update Status\n";
+
+	$welcome_view->text($temp);
+	welcome();
+}
+
+sub welcome {
+	$welcome_view->focus();
+}
+
+sub timeline {
+	$timeline_view->text("Loading timeline");
+	$timeline_view->focus();
+
+	my $temp = "";
+	my @temp_ary = $pwitter->timeline();
+	shift(@temp_ary);
+
+	foreach(@temp_ary) {
+		#$temp .= $_  . "\n\n";
+		if(ref($_) eq "ARRAY") {
+			my @array2 = @$_;
+
+			$temp .= "[$array2[0]] $array2[1] - $array2[2]\n\n";
+		} else {
+			$temp .= $_ . "\n\n";
+		}
+	}
+
+	$timeline_view->text($temp);
+}
+
+sub about_dialog {
+	$cui->dialog(
+		-title => "About Pwitter",
+		-message => "Pwitter $version\n\n",
+		-bfg => 'blue',
+		-tfg => 'blue',
+		-tbg => 'white',
+	);
+}
+
+# function to exit
+sub exit_dialog {
+	my $return = $cui->dialog(
+		-message	=> "Do you really want to quit?",
+		-title		=> "Are you sure?",
+		-buttons	=> ['yes', 'no'],
+		-bfg => 'blue',
+		-tfg => 'blue',
+		-tbg => 'white',
+	);
+
+	exit(0) if $return;
+}

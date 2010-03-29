@@ -42,36 +42,40 @@ sub check_os {
 }
 
 sub read_prefs {
-	my ($self) = @_;
+	my $self = shift;
 
 	my $file;
 	if(check_os() eq 'nix') {
-		if(-d '~/.pwitter') {
-			unless(chdir('~/.pwitter')) {
+		my $home = $ENV{'HOME'};
+		if(-d "$home/.pwitter") {
+			unless(chdir("$home/.pwitter")) {
 				print "Problem changing directory\n";
 				return;
 			}
+			$file = "$home/.pwitter/preferences.cfg";
+		} else {
+			$file = "preferences.cfg";
 		}
-			#	$file = "~/.pwitter/preferences.cfg";
-	#} else {
+	} else {
 		$file = "preferences.cfg";
 	}
 
-	print "\nfile: $file\n";
-	
 	if(-e $file) {
-		print "\n\nfile: $file\n\n";
 		open(PREFS, $file) || warn "could not open preferences file: ($file)\n";
 
 		while(<PREFS>) {
 			my $line = $_;
-			my @temp = split(/:/, $line);
+			unless(substr($line,0,1) eq '#') {
+				my @temp = split(/:/, $line);
 
-			if($temp[0] eq "username" && $temp[1] ne "") {
-				$self->username($temp[1]);
-			}
-			if($temp[0] eq "password" && $temp[1] ne "") {
-				$self->password($temp[1]);
+				if($temp[0] eq "username" && $temp[1] ne "") {
+					#print "\nu1: $temp[1]\n";
+					$self->username($temp[1]);
+					#print "u2: " . $self->username() . "\n";
+				}
+				if($temp[0] eq "password" && $temp[1] ne "") {
+					$self->password($temp[1]);
+				}
 			}
 		}
 
@@ -79,21 +83,25 @@ sub read_prefs {
 	}
 }
 
-sub write_prefs {
+sub save {
 	my ($self, $username, $password) = @_;
 	
+	my $file = 'preferences.cfg';
+
 	if(check_os() eq 'nix') {
-		chdir();
-		unless(-d ".pwitter") {
-			mkdir(".pwitter");
+			#chdir();
+		my $home = $ENV{'HOME'};
+		unless(-d "$home/.pwitter") {
+			mkdir("$home/.pwitter");
 		}
-		unless(chdir(".pwitter")) {
+		unless(chdir("$home/.pwitter")) {
 			print "Problem changing directory\n";
 			return;
 		}
+		$file = "$home/.pwitter/preferences.cfg";
 	}
 
-	open(PREFS, ">preferences.cfg") || warn "could not write preferences file: (preferences.cfg)\n";
+	open(PREFS, ">$file") || warn "could not write preferences file: ($file)\n";
 	print PREFS "## Pwitter preference file ##\n";
 	print PREFS "username:" . $self->username . "\n";
 	print PREFS "password:" . $self->password . "\n";
