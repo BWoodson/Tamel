@@ -21,9 +21,6 @@ sub login {
 	}
 	
 	$tw->credentials($prefs->username,$prefs->password);
-	#$tw->credentials("ExoticFish","samsung");
-
-	return 1;
 }
 
 sub update {
@@ -80,6 +77,8 @@ sub prefs_check {
 sub set_u_p {
 	my ($self, $u, $p) = @_;
 
+	print "\n|" . $prefs->username . "|" .$prefs->password . "|" . $u . "|" . $p . "|\n";
+
 	$prefs->username($u);
 	$prefs->password($p);
 }
@@ -91,12 +90,10 @@ sub get_u_p {
 	my $p = '';
 
 	if($prefs->has_username) {
-		$u = $prefs->username();
-		#print "\nu: $u\n";
+		$u = $prefs->username;
 	}
 	if($prefs->has_password) {
-		$p = $prefs->password();
-		#print "\np: $p\n";
+		$p = $prefs->password;
 	}
 
 	my @temp = ($u, $p);
@@ -109,3 +106,5 @@ sub save_prefs {
 
 	$prefs->save();
 }
+
+1;

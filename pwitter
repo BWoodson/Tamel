@@ -116,7 +116,6 @@ sub login_window {
 	my $self = shift;	
 
 	my @u_p = $pwitter->get_u_p();
-	#shift(@u_p);
 
 	my $u = $u_p[0]?$u_p[0]:'';
 	my $p = $u_p[1]?$u_p[1]:'';
@@ -237,7 +236,7 @@ sub update {
 						my $self = shift;
 						
 						my $t = $tweet_entry->get();
-						#my $r = $pwitter->update($t);
+						my $r = $pwitter->update($t);
 						
 						$self->parent->loose_focus;
 					},
@@ -282,7 +281,6 @@ sub timeline {
 	shift(@temp_ary);
 
 	foreach(@temp_ary) {
-		#$temp .= $_  . "\n\n";
 		if(ref($_) eq "ARRAY") {
 			my @array2 = @$_;
 

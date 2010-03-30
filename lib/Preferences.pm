@@ -69,12 +69,14 @@ sub read_prefs {
 				my @temp = split(/:/, $line);
 
 				if($temp[0] eq "username" && $temp[1] ne "") {
-					#print "\nu1: $temp[1]\n";
-					$self->username($temp[1]);
-					#print "u2: " . $self->username() . "\n";
+					my $t = $temp[1];
+					chomp($t);
+					$self->username($t);
 				}
 				if($temp[0] eq "password" && $temp[1] ne "") {
-					$self->password($temp[1]);
+					my $t = $temp[1];
+					chomp($t);
+					$self->password($t);
 				}
 			}
 		}
@@ -89,7 +91,6 @@ sub save {
 	my $file = 'preferences.cfg';
 
 	if(check_os() eq 'nix') {
-			#chdir();
 		my $home = $ENV{'HOME'};
 		unless(-d "$home/.pwitter") {
 			mkdir("$home/.pwitter");
