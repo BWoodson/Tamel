@@ -209,26 +209,55 @@ sub login_window {
 sub update {
 	my $self = shift;
 
+	my $chars_num_label;
+
 	my $tweet_window = $win1->add(
 			'tweetwindow', 'Window',
 			-title => 'Update Status',
-			-height => 10, -width => 40,
+			-height => 14, -width => 40,
 			-border => 1, -centered => 1,
 			-bfg => 'blue',	-tfg => 'blue',
 			-tbg => 'white',
 	);
 
 	my $tweet_entry = $tweet_window->add(
-			'tweet_entry', 'TextEntry',
-			-height => 2, -width => 34,
+			'tweet_entry', 'TextEditor',
+			-height => 6, -width => 34,
 			-x => 2, -y => 1,
+			-vscrollbar => 1,
 			-border =>1, -wrapping => 1,
-			-maxlength => 140
+			-maxlength => 140,
+			-onchange => sub {
+					my $self = shift;
+					
+					my $text = $self->get();
+					my $length = length($text);
+					if($length > 140) {
+						$text = substr($text, 0, 140);
+						$length = 140;
+						$self->text($text);
+					}
+
+					$chars_num_label->text(140 - $length);
+			}
 	);
 
-	my $ok_button = $tweet_window->add(
-			'ok_button', 'Buttonbox',
-			-x => 8, -y => 5,
+	$tweet_window->add(
+			undef, 'Label',
+			-x => 8, -y => 8,
+			-text => "characters left:"
+	);
+
+	$chars_num_label = $tweet_window->add(
+			'chars_num_label', 'Label',
+			-x => 26, -y => 8,
+			-reverse => 1,
+			-text => "140"
+	);
+
+	my $update_buttons = $tweet_window->add(
+			'update_buttons', 'Buttonbox',
+			-x => 8, -y => 10,
 			-buttons => [
 				{
 					-label => '< Update >',
