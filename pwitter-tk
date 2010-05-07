@@ -1,0 +1,132 @@
+#!/usr/bin/perl -w
+
+use Tk;
+use strict;
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use DateTime;
+use Pwitter;
+use Net::Twitter;
+
+my $version = "1.0";
+
+my $pwitter = Pwitter->new();
+
+my $tw;
+
+## Main Window ##
+my $mw = new MainWindow(-title=>'Pwitter');
+
+## Menu Setup ##
+my $menu = $mw->Menu();
+$mw->configure(-menu => $menu);
+
+my $tweet_menu = $menu->cascade(-label=>"Twitter", -underline=>0, -tearoff=>0);
+my $about_menu = $menu->cascade(-label=>"About", -underline=>0, -tearoff=>0);
+
+$tweet_menu->command(-label=>"Login", -underline=>0, -command=>sub{ login_window(); });
+$tweet_menu->command(-label=>"Update Status", -underline=>0, -command=>sub{ refresh(); });
+$tweet_menu->separator();
+$tweet_menu->command(-label=>"Exit", -underline=>1, -command=>sub{ exit });
+
+$about_menu->command(-label=>"About", -underline=>0, -command=>sub{
+			$mw->messageBox(-title=>"About",
+					-message=>"Pwitter $version\n\n",
+					-type=>"OK", -default=>"ok");});
+
+## Content Area Frame ##
+my $txt_frame = $mw->Frame(-background=>'yellow')->pack(-expand=>1, -fill=>'both');
+my $txt = $txt_frame->Scrolled('Text', -scrollbars => 'oe', -width=>80, -height=>20,
+				-wrap=>'word', -background=>'black', -foreground=>'white',
+				-font=>['Times New Roman', 12])->pack(-expand=>1, -fill=>'both');
+
+sub login {
+	my $self = shift;
+	my $r = $pwitter->login();
+
+	if(!$r) {
+		$txt->delete('1.0', 'end');
+		$txt->insert("It looks like you are missing some login info.\n\nYou're going to need to enter login information from the File menu first before we can get you tweeting!");
+	} else {
+		# first_welcome();
+		timeline();
+	}
+}
+
+sub timeline {
+	$txt->delete('1.0', 'end');
+
+	my $temp = "";
+	my @temp_ary = $pwitter->timeline();
+	shift(@temp_ary);
+
+	foreach(@temp_ary) {
+		if(ref($_) eq "ARRAY") {
+			my @array2 = @$_;
+
+			$temp .= "[$array2[0]] $array2[1] - $array2[2]\n\n";
+		} else {
+			$temp .= $_ . "\n\n";
+		}
+	}
+
+	$txt->insert('end', $temp);
+}
+
+sub settings {
+	# grab the username and password
+	my @u_p = $pwitter->get_u_p();
+
+	my $u = $u_p[0]?$u_p[0]:'';
+	my $p = $u_p[1]?$u_p[1]:'';
+	chomp($u);
+	chomp($p);
+	
+	my $save_check = 0;
+	
+	## Launch Settings Window ##
+	my $settings_win = $mw->Toplevel(-title=>'Settings');
+	$settings_win->Label(-text=>'Settings')->pack();
+
+	my $s_frame = $settings_win->Frame()->pack();
+
+	my $s_user_lbl = $s_frame->Label(-text=>'User:');
+	my $s_user_entry = $s_frame->Entry(-width=>20, -text=>$u);
+	my $s_pwd_lbl = $s_frame->Label(-text=>'Password:');
+	my $s_pwd_entry = $s_frame->Entry(-width=>20, -text=>$p);
+
+	my $save_prefs_chkbx = $s_frame->Checkbutton(-text=>'Save login info?', -variable=>\$save_check);
+	my $save_btn = $s_frame->Button(-text=>'Save', -command=>sub{
+		# save preferences
+		my $u = $s_user_entry->get();
+		my $p = $s_pwd_entry->get();
+		chomp($u);
+		chomp($p);
+		$pwitter->set_u_p($u, $p);
+		
+		if($save_check != 0){
+			$pwitter->save_prefs();
+		}
+		login();
+	});
+	my $close_btn = $s_frame->Button(-text=>'Close', -command=>[$settings_win=>'destroy']);
+
+	$s_user_lbl->grid(-row=>1, -column=>1);
+	$s_user_entry->grid(-row=>1, -column=>2);
+	$s_pwd_lbl->grid(-row=>2, -column=>1);
+	$s_pwd_entry->grid(-row=>2, -column=>2);
+
+	$save_prefs_chkbx->grid(-row=>3, -column=>2);
+	$save_btn->grid(-row=>4, -column=>1);
+	$close_btn->grid(-row=>4, -column=>3);
+}
+
+sub refresh {
+	if(login()) {
+		timeline();
+	}
+}
+
+refresh();
+
+MainLoop;
