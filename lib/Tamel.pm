@@ -1,4 +1,4 @@
-package Pwitter;
+package Tamel;
 use Moose;
 use Net::Twitter;
 use FindBin;

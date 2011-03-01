@@ -5,17 +5,17 @@ use strict;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use DateTime;
-use Pwitter;
+use Tamel;
 use Net::Twitter;
 
 my $version = "1.0";
 
-my $pwitter = Pwitter->new();
+my $tamel = Tamel->new();
 
 my $tw;
 
 ## Main Window ##
-my $mw = new MainWindow(-title=>'Pwitter');
+my $mw = new MainWindow(-title=>'Tamel');
 
 ## Menu Setup ##
 my $menu = $mw->Menu();
@@ -31,7 +31,7 @@ $tweet_menu->command(-label=>"Exit", -underline=>1, -command=>sub{ exit });
 
 $about_menu->command(-label=>"About", -underline=>0, -command=>sub{
 			$mw->messageBox(-title=>"About",
-					-message=>"Pwitter $version\n\n",
+					-message=>"Tamel $version\n\n",
 					-type=>"OK", -default=>"ok");});
 
 ## Content Area Frame ##
@@ -42,7 +42,7 @@ my $txt = $txt_frame->Scrolled('Text', -scrollbars => 'oe', -width=>80, -height=
 
 sub login {
 	my $self = shift;
-	my $r = $pwitter->login();
+	my $r = $tamel->login();
 
 	if(!$r) {
 		$txt->delete('1.0', 'end');
@@ -57,7 +57,7 @@ sub timeline {
 	$txt->delete('1.0', 'end');
 
 	my $temp = "";
-	my @temp_ary = $pwitter->timeline();
+	my @temp_ary = $tamel->timeline();
 	shift(@temp_ary);
 
 	foreach(@temp_ary) {
@@ -75,7 +75,7 @@ sub timeline {
 
 sub settings {
 	# grab the username and password
-	my @u_p = $pwitter->get_u_p();
+	my @u_p = $tamel->get_u_p();
 
 	my $u = $u_p[0]?$u_p[0]:'';
 	my $p = $u_p[1]?$u_p[1]:'';
@@ -102,10 +102,10 @@ sub settings {
 		my $p = $s_pwd_entry->get();
 		chomp($u);
 		chomp($p);
-		$pwitter->set_u_p($u, $p);
+		$tamel->set_u_p($u, $p);
 		
 		if($save_check != 0){
-			$pwitter->save_prefs();
+			$tamel->save_prefs();
 		}
 		login();
 	});

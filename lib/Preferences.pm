@@ -47,12 +47,12 @@ sub read_prefs {
 	my $file;
 	if(check_os() eq 'nix') {
 		my $home = $ENV{'HOME'};
-		if(-d "$home/.pwitter") {
-			unless(chdir("$home/.pwitter")) {
+		if(-d "$home/.tamel") {
+			unless(chdir("$home/.tamel")) {
 				print "Problem changing directory\n";
 				return;
 			}
-			$file = "$home/.pwitter/preferences.cfg";
+			$file = "$home/.tamel/preferences.cfg";
 		} else {
 			$file = "preferences.cfg";
 		}
@@ -92,18 +92,18 @@ sub save {
 
 	if(check_os() eq 'nix') {
 		my $home = $ENV{'HOME'};
-		unless(-d "$home/.pwitter") {
-			mkdir("$home/.pwitter");
+		unless(-d "$home/.tamel") {
+			mkdir("$home/.tamel");
 		}
-		unless(chdir("$home/.pwitter")) {
+		unless(chdir("$home/.tamel")) {
 			print "Problem changing directory\n";
 			return;
 		}
-		$file = "$home/.pwitter/preferences.cfg";
+		$file = "$home/.tamel/preferences.cfg";
 	}
 
 	open(PREFS, ">$file") || warn "could not write preferences file: ($file)\n";
-	print PREFS "## Pwitter preference file ##\n";
+	print PREFS "## Tamel preference file ##\n";
 	print PREFS "username:" . $self->username . "\n";
 	print PREFS "password:" . $self->password . "\n";
 

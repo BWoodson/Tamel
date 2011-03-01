@@ -3,12 +3,12 @@
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Pwitter;
+use Tamel;
 use Curses::UI;
 
 my $version = "1.0";
 
-my $pwitter = Pwitter->new();
+my $tamel = Tamel->new();
 
 # create curses interface
 my $cui = Curses::UI->new( -color_support => 1);
@@ -37,7 +37,7 @@ my @menu = (
 	},
 	{ -label => 'Help',
 		-submenu => [
-			{ -label => 'About Pwitter',
+			{ -label => 'About Tamel',
 			  -value => \&about_dialog },
 		]
 	},
@@ -103,7 +103,7 @@ $cui->mainloop;
 ## subroutines ##
 sub login {
 	my $self = shift;
-	my $r = $pwitter->login();
+	my $r = $tamel->login();
 
 	if(!$r) {
 		$welcome_view->text("It looks like you are missing some login info.\n\nYou're going to need to enter login information from the File menu first before we can get you tweeting!");
@@ -115,7 +115,7 @@ sub login {
 sub login_window {
 	my $self = shift;	
 
-	my @u_p = $pwitter->get_u_p();
+	my @u_p = $tamel->get_u_p();
 
 	my $u = $u_p[0]?$u_p[0]:'';
 	my $p = $u_p[1]?$u_p[1]:'';
@@ -178,11 +178,11 @@ sub login_window {
 						my $p = $password_entry->get();
 						chomp($u);
 						chomp($p);
-						$pwitter->set_u_p($u, $p);
+						$tamel->set_u_p($u, $p);
 
 						my $check = $save_checkbox->get();
 						if($check){
-							$pwitter->save_prefs();
+							$tamel->save_prefs();
 						}
 						login();
 						$self->parent->loose_focus;
@@ -265,7 +265,7 @@ sub update {
 						my $self = shift;
 						
 						my $t = $tweet_entry->get();
-						my $r = $pwitter->update($t);
+						my $r = $tamel->update($t);
 						
 						$self->parent->loose_focus;
 					},
@@ -287,7 +287,7 @@ sub update {
 
 sub first_welcome {
 	# print startup message
-	my $temp = "Welcome to Pwitter!\n\n"
+	my $temp = "Welcome to Tamel!\n\n"
 		. "-= Shortcuts =-\n"
 		. "<Ctrl-W> Welcome View\n"
 		. "<Ctrl-T> Timeline View\n"
@@ -306,7 +306,7 @@ sub timeline {
 	$timeline_view->focus();
 
 	my $temp = "";
-	my @temp_ary = $pwitter->timeline();
+	my @temp_ary = $tamel->timeline();
 	shift(@temp_ary);
 
 	foreach(@temp_ary) {
@@ -324,8 +324,8 @@ sub timeline {
 
 sub about_dialog {
 	$cui->dialog(
-		-title => "About Pwitter",
-		-message => "Pwitter $version\n\n",
+		-title => "About Tamel",
+		-message => "Tamel $version\n\n",
 		-bfg => 'blue',
 		-tfg => 'blue',
 		-tbg => 'white',
